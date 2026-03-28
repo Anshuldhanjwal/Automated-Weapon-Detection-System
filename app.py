@@ -10,8 +10,7 @@ st.title("🔫 Weapon Detection System")
 uploaded_file = st.file_uploader("Upload Image")
 
 if uploaded_file:
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, 1)
+   img = Image.open(uploaded_file)
 
     results = model(img)
     annotated = results[0].plot()
