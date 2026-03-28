@@ -14,20 +14,9 @@ This project is an AI-based system for detecting weapons in forensic images usin
 - YOLOv8 (Ultralytics)
 - OpenCV
 - NumPy
-```md
+
 ## ⚙️ How to Run
 
 ```bash
 pip install -r requirements.txt
 python detect.py
-
-## 📸 Output Results
-
-### 🖼 Input Image
-![Input](input_detection.png)
-
-### 🔍 Detection Output
-![Detection](output_detection.png)
-
-### ✅ Annotated Result
-![Annotated](annotated_result.png)
