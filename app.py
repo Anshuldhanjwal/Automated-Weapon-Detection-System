@@ -10,7 +10,7 @@ st.title("🔫 Weapon Detection System")
 uploaded_file = st.file_uploader("Upload Image")
 
 if uploaded_file:
-   img = Image.open(uploaded_file)
+    img = Image.open(uploaded_file)
 
     results = model(img)
     annotated = results[0].plot()
