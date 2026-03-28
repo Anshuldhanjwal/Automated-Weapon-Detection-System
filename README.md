@@ -21,14 +21,13 @@ This project is an AI-based system for detecting weapons in forensic images usin
 pip install -r requirements.txt
 python detect.py
 ```
-</> Markdown
-📸 Output Results
-🖼 Input Image
+## 📸 Output Results
 
-🔍 Detection Output
+### 🖼 Input Image
+![Input](input_detection.png)
 
-✅ Annotated Result
+### 🔍 Detection Output
+![Detection](output_detection.png)
 
-👨‍💻 Author
-
-Anshul Dhanjwal
+### ✅ Annotated Result
+![Annotated](annotated_result.png)
