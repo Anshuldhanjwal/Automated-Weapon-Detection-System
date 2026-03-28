@@ -1,6 +1,6 @@
 import streamlit as st
 from ultralytics import YOLO
-import cv2
+from PIL import Image
 import numpy as np
 
 model = YOLO("yolov8n.pt")
