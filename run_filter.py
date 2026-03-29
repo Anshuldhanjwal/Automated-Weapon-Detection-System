@@ -9,6 +9,7 @@ Usage:
     python run_filter.py
     python run_filter.py --classes knife --annotate
     python run_filter.py --input input/ --output output/ --annotate
+    python run_filter.py --classes knife gun --annotate
 """
 
 import argparse
@@ -32,7 +33,7 @@ SUPPORTED_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-def draw_boxes(img, detections, model_names):
+def draw_boxes(img, detections):
     """Draw bounding boxes and labels onto img (in-place). Returns img."""
     for det in detections:
         x1, y1, x2, y2 = det["x1"], det["y1"], det["x2"], det["y2"]
@@ -46,6 +47,20 @@ def draw_boxes(img, detections, model_names):
         cv2.putText(img, text, (x1 + 2, y1 - 3),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1)
     return img
+
+
+def collect_images(input_path: str) -> list[str]:
+    """Return a sorted list of supported image paths from a file or directory."""
+    if os.path.isfile(input_path):
+        ext = os.path.splitext(input_path)[1].lower()
+        return [input_path] if ext in SUPPORTED_EXTS else []
+    if os.path.isdir(input_path):
+        return sorted(
+            os.path.join(input_path, f)
+            for f in os.listdir(input_path)
+            if os.path.splitext(f)[1].lower() in SUPPORTED_EXTS
+        )
+    return []
 
 
 # ── Main pipeline ─────────────────────────────────────────────────────────────
@@ -62,15 +77,11 @@ def run_filter(args):
 
     model = YOLO(args.model)
 
-    # Collect images
-    image_paths = [
-        os.path.join(args.input, f)
-        for f in os.listdir(args.input)
-        if os.path.splitext(f)[1].lower() in SUPPORTED_EXTS
-    ] if os.path.isdir(args.input) else []
+    # Collect images (sorted for deterministic ordering)
+    image_paths = collect_images(args.input)
 
     if not image_paths:
-        print(f"  [ERROR] No images found in: {args.input}")
+        print(f"  [ERROR] No supported images found in: {args.input}")
         return
 
     # Prepare output dirs
@@ -118,7 +129,7 @@ def run_filter(args):
             shutil.copy(path, os.path.join(filtered_dir, fname))
 
             if args.annotate:
-                annotated = draw_boxes(img.copy(), match_dets, model.names)
+                annotated = draw_boxes(img.copy(), match_dets)
                 cv2.imwrite(os.path.join(annotated_dir, fname), annotated)
 
             labels_str = ", ".join(f"{d['label']} ({d['confidence']:.0%})"
@@ -130,8 +141,8 @@ def run_filter(args):
     # ── CSV report ────────────────────────────────────────────────────────────
     csv_path = os.path.join(args.output, "detection_report.csv")
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["image","label","confidence",
-                                               "x1","y1","x2","y2"])
+        writer = csv.DictWriter(f, fieldnames=["image", "label", "confidence",
+                                               "x1", "y1", "x2", "y2"])
         writer.writeheader()
         writer.writerows(all_dets)
 
@@ -190,13 +201,15 @@ def run_filter(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AWDEFS Evidence Filtering Pipeline")
     parser.add_argument("--model",    default=DEFAULT_MODEL)
-    parser.add_argument("--input",    default=DEFAULT_INPUT_DIR)
+    parser.add_argument("--input",    default=DEFAULT_INPUT_DIR,
+                        help="Path to input folder or single image file")
     parser.add_argument("--output",   default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--conf",     type=float, default=DEFAULT_CONF)
     parser.add_argument("--classes",  nargs="+", default=DEFAULT_CLASSES,
-                        help="Object class names to filter for (space-separated)")
+                        help="Object class names to filter for (space-separated, e.g. knife gun)")
     parser.add_argument("--annotate", action="store_true",
                         help="Save annotated images with bounding boxes")
     args = parser.parse_args()
 
     run_filter(args)
+
