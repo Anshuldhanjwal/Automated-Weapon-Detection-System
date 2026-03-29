@@ -305,6 +305,8 @@ Automated-Weapon-Detection-System/
 This project is licensed under the [MIT License](LICENSE).
 
 ---
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://automated-weapon-detection-system-xrlnbrdyphcb5pe7iw8r6a.streamlit.app)
+
 
 <div align="center">
 Made by <a href="https://github.com/Anshuldhanjwal">Anshul Dhanjwal</a> | NFSU Delhi
