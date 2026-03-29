@@ -7,6 +7,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-27338e?style=for-the-badge&logo=OpenCV&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://automated-weapon-detection-system-xrlnbrdyphcb5pe7iw8r6a.streamlit.app)
 
 **An AI-powered forensic tool that automatically detects weapons in crime scene images using YOLOv8 deep learning — reducing manual triage time by up to 99.5%**
 
@@ -20,7 +21,7 @@
 
 Forensic investigators manually review **500–1000 crime scene photos per case**, spending **8–12 hours** on initial evidence triage. This process is:
 - ❌ Time-consuming and prone to human fatigue
-- ❌ Inconsistent across different investigators  
+- ❌ Inconsistent across different investigators
 - ❌ A bottleneck that delays critical investigations
 
 **AWDEFS solves this** by automating weapon detection and filtering relevant evidence in **under 5 minutes**.
@@ -31,10 +32,11 @@ Forensic investigators manually review **500–1000 crime scene photos per case*
 
 | Feature | Description |
 |--------|-------------|
-| 🎯 **Real-time Detection** | Detects firearms and knives using YOLOv8-nano |
+| 🎯 **Real-time Detection** | Detects firearms (89% mAP) and knives using fine-tuned YOLOv8 |
 | 🖼️ **Annotated Output** | Bounding boxes with confidence scores overlaid |
-| 📁 **Batch Filtering** | Process entire folders of crime scene images |
-| 📊 **CSV Reports** | Auto-generated forensic documentation |
+| 📁 **Batch Filtering** | Upload multiple images — flags only weapon-containing ones |
+| 📊 **CSV Reports** | Auto-generated forensic documentation with coordinates |
+| 🗜️ **ZIP Export** | Download all flagged annotated images in one click |
 | 🖥️ **Web Interface** | Clean Streamlit UI for non-technical users |
 | ⚡ **CPU Compatible** | No GPU required — runs on standard forensic workstations |
 
@@ -53,26 +55,26 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+Open [http://localhost:8501](http://localhost:8501) in your browser and upload an image.
 
 ---
 
 ## 🎬 Demo
 
-### Web Application
-Upload any image and get instant weapon detection results:
+### Web Application — Two modes:
 
-```
-streamlit run app.py
-```
+**🔍 Single Image Detection** — Upload one image, get instant annotated result + download
+
+**📁 Batch Evidence Filter** — Upload 10, 100, or 500 images at once. The system scans all of them, shows a flagged vs clean summary table, previews annotated results, and lets you download a CSV report and ZIP of flagged images.
 
 ### Command Line Detection
 ```bash
 python detect.py --source input/ --output output/
 ```
 
-### Evidence Filtering
+### Evidence Filtering Pipeline
 ```bash
-# Filter images containing guns or knives (space-separated class names)
+# Filter all weapon types (space-separated class names)
 python run_filter.py --classes knife gun --annotate
 ```
 
@@ -107,8 +109,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> **Note:** `requirements.txt` installs the CPU-only build of PyTorch (~500 MB) instead of the full CUDA build (~2 GB). If you have a NVIDIA GPU, remove the `--index-url` line from `requirements.txt` before installing.
-
 ### Step 4: Run the App
 ```bash
 streamlit run app.py
@@ -118,11 +118,10 @@ streamlit run app.py
 
 ## 🛠️ Usage
 
-### 🌐 Web App (Recommended for beginners)
+### 🌐 Web App (Recommended)
 ```bash
 streamlit run app.py
 # Open http://localhost:8501 in your browser
-# Upload any image → See detections instantly
 ```
 
 ### 💻 Command Line Detection
@@ -145,7 +144,7 @@ python run_filter.py --annotate
 # Filter images containing guns
 python run_filter.py --classes gun --annotate
 
-# Filter all weapon types (space-separated class names)
+# Filter all weapon types
 python run_filter.py --classes knife gun --annotate
 
 # Custom input/output paths
@@ -164,7 +163,6 @@ output/
 ---
 
 ## 🏗️ Architecture
-
 ```
 Input Image (JPG/PNG)
         │
@@ -174,12 +172,11 @@ Input Image (JPG/PNG)
 └────────┬─────────┘
          │
          ▼
-┌──────────────────────────────┐
-│   YOLOv8-nano Model          │
-│  ├── Backbone (CSPDarknet)   │  Feature extraction
-│  ├── Neck (FPN)              │  Multi-scale fusion
-│  └── Head (Detection)       │  Bounding box + class prediction
-└────────┬─────────────────────┘
+┌──────────────────────────────────────┐
+│   Dual YOLOv8-nano Models            │
+│  ├── Firearm Model (fine-tuned)      │  89% mAP — detects guns/pistols/rifles
+│  └── Knife Model (COCO, filtered)   │  Knife class only, no false positives
+└────────┬─────────────────────────────┘
          │
          ▼
 ┌──────────────────┐
@@ -230,11 +227,10 @@ Input Image (JPG/PNG)
 ---
 
 ## 📁 Project Structure
-
 ```
 Automated-Weapon-Detection-System/
 │
-├── app.py                  # Streamlit web application
+├── app.py                  # Streamlit web application (single + batch mode)
 ├── detect.py               # Core detection script
 ├── run_filter.py           # Evidence filtering pipeline
 ├── requirements.txt        # Python dependencies
@@ -258,9 +254,11 @@ Automated-Weapon-Detection-System/
 ## 🔬 Tech Stack
 
 | Tool | Purpose | Version |
-|------|---------|---------| 
+|------|---------|---------|
 | Python | Core language | 3.10+ |
-| YOLOv8 (Ultralytics) | Object detection model | 8.0+ |
+| YOLOv8 — Firearm Model | Fine-tuned firearm detection (89% mAP) | 8.0+ |
+| YOLOv8 — Knife Model | COCO pretrained, knife class only | 8.0+ |
+| HuggingFace Hub | Model download & versioning | Latest |
 | OpenCV | Image processing & annotation | 4.5+ |
 | NumPy | Numerical operations | 1.21+ |
 | Pillow | Image I/O | 8.0+ |
@@ -271,7 +269,7 @@ Automated-Weapon-Detection-System/
 
 ## ⚠️ Limitations
 
-- Trained on handguns and knives only (no rifles, explosives, etc.)
+- Firearm model detects handguns, pistols and rifles — not explosives or bladed tools beyond knives
 - Performance may degrade in extreme low-light images
 - Designed for static image analysis (video processing is a future enhancement)
 - Investigators must verify all AI-flagged evidence before legal use
@@ -298,6 +296,7 @@ Automated-Weapon-Detection-System/
 ## 📚 References
 
 - Ultralytics YOLOv8: https://github.com/ultralytics/ultralytics
+- Firearm Detection Model: https://huggingface.co/Subh775/Firearm_Detection_Yolov8n
 - Weapon-Kaggle Dataset: https://www.kaggle.com/datasets/snehilsanyal/weapon-detection-test
 - Redmon & Farhadi (2018). YOLOv3: An Incremental Improvement. arXiv:1804.02767
 
@@ -308,8 +307,6 @@ Automated-Weapon-Detection-System/
 This project is licensed under the [MIT License](LICENSE).
 
 ---
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://automated-weapon-detection-system-xrlnbrdyphcb5pe7iw8r6a.streamlit.app)
-
 
 <div align="center">
 Made by <a href="https://github.com/Anshuldhanjwal">Anshul Dhanjwal</a> | NFSU Delhi
