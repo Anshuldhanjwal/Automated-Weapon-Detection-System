@@ -42,6 +42,10 @@ Forensic investigators manually review **500–1000 crime scene photos per case*
 
 ## ⚡ Quickstart
 
+### 🌐 Try it live (no installation needed)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://automated-weapon-detection-system-xrlnbrdyphcb5pe7iw8r6a.streamlit.app)
+
+### 💻 Run locally
 ```bash
 git clone https://github.com/Anshuldhanjwal/Automated-Weapon-Detection-System.git
 cd Automated-Weapon-Detection-System
@@ -50,7 +54,6 @@ streamlit run app.py
 ```
 
 Open [http://localhost:8501](http://localhost:8501) in your browser and upload an image.
-
 ---
 
 ## 🎬 Demo
