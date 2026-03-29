@@ -12,6 +12,8 @@ Usage:
 
 import argparse
 import os
+from collections import Counter
+
 import cv2
 from ultralytics import YOLO
 
@@ -73,6 +75,19 @@ def detect_image(model, image_path: str, conf: float, output_dir: str) -> list:
     return detections
 
 
+def collect_images(source: str) -> list[str]:
+    """Return a sorted list of supported image paths from a file or directory."""
+    if os.path.isfile(source):
+        return [source]
+    if os.path.isdir(source):
+        return sorted(
+            os.path.join(source, f)
+            for f in os.listdir(source)
+            if os.path.splitext(f)[1].lower() in SUPPORTED_EXTS
+        )
+    return []
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Weapon Detection with YOLOv8")
@@ -98,21 +113,11 @@ def main():
     # Load model
     model = YOLO(args.model)
 
-    # Collect image paths
-    if os.path.isfile(args.source):
-        image_paths = [args.source]
-    elif os.path.isdir(args.source):
-        image_paths = [
-            os.path.join(args.source, f)
-            for f in os.listdir(args.source)
-            if os.path.splitext(f)[1].lower() in SUPPORTED_EXTS
-        ]
-    else:
-        print(f"  [ERROR] Source not found: {args.source}")
-        return
+    # Collect image paths (sorted for deterministic ordering)
+    image_paths = collect_images(args.source)
 
     if not image_paths:
-        print("  [ERROR] No supported images found.")
+        print(f"  [ERROR] No supported images found at: {args.source}")
         return
 
     print(f"  Processing {len(image_paths)} image(s)...\n")
@@ -130,7 +135,6 @@ def main():
     print(f"  Images processed  : {len(image_paths)}")
     print(f"  Total detections  : {len(all_detections)}")
     if all_detections:
-        from collections import Counter
         counts = Counter(d["label"] for d in all_detections)
         for label, count in counts.most_common():
             print(f"    {label:<20}: {count}")
