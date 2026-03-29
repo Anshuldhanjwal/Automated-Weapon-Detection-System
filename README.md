@@ -285,5 +285,5 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-Made with ❤️ by <a href="https://github.com/Anshuldhanjwal">Anshul Dhanjwal</a> | NFSU Delhi
+Made by <a href="https://github.com/Anshuldhanjwal">Anshul Dhanjwal</a> | NFSU Delhi
 </div>
