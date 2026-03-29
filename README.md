@@ -53,7 +53,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501) in your browser and upload an image.
+
 ---
 
 ## 🎬 Demo
