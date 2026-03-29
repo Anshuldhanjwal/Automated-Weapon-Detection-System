@@ -1,2 +1,18 @@
-streamlit
-Pillow
+# AWDEFS — Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Web UI
+streamlit>=1.28.0
+
+# Deep Learning & Detection
+ultralytics>=8.0.0          # YOLOv8
+torch>=2.0.0                # PyTorch (CPU)
+torchvision>=0.15.0
+
+# Image Processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Utilities
+PyYAML>=6.0
