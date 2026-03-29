@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import numpy as np
 import io
 
@@ -84,19 +84,36 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
+    # Validate the uploaded file is a readable image
+    try:
+        image = Image.open(uploaded_file)
+        image.verify()                  # catch corrupt files early
+        uploaded_file.seek(0)           # reset stream after verify()
+        image = Image.open(uploaded_file)
+    except Exception as e:
+        st.error(f"⚠️ Could not read the uploaded image: {e}")
+        st.stop()
+
     col1, col2 = st.columns(2, gap="large")
     with col1:
         st.subheader("🖼️ Original Image")
-        st.image(image, use_column_width=True)
+        st.image(image, use_container_width=True)
         st.caption(f"Size: {image.width} × {image.height} px")
+
     with st.spinner("Running weapon detection…"):
-        annotated_img, detections = run_detection(image, conf_threshold=conf_thresh)
+        try:
+            annotated_img, detections = run_detection(image, conf_threshold=conf_thresh)
+        except Exception as e:
+            st.error(f"⚠️ Detection failed: {e}")
+            st.stop()
+
     with col2:
         st.subheader("🔍 Detection Result")
-        st.image(annotated_img, use_column_width=True)
+        st.image(annotated_img, use_container_width=True)
         st.caption(f"{len(detections)} object(s) detected")
+
     st.divider()
+
     if detections:
         st.subheader(f"✅ {len(detections)} Detection(s) Found")
         cols = st.columns(min(len(detections), 4))
@@ -109,6 +126,7 @@ if uploaded_file is not None:
         st.dataframe(detections, use_container_width=True)
     else:
         st.info("No objects detected. Try lowering the threshold in the sidebar.")
+
     st.download_button(
         label="⬇️ Download Annotated Image",
         data=pil_to_bytes(annotated_img),
