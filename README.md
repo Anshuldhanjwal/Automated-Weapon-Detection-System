@@ -10,7 +10,7 @@
 
 **An AI-powered forensic tool that automatically detects weapons in crime scene images using YOLOv8 deep learning — reducing manual triage time by up to 99.5%**
 
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Results](#-results)
+[Features](#-features) • [Quickstart](#-quickstart) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Results](#-results)
 
 </div>
 
@@ -40,6 +40,19 @@ Forensic investigators manually review **500–1000 crime scene photos per case*
 
 ---
 
+## ⚡ Quickstart
+
+```bash
+git clone https://github.com/Anshuldhanjwal/Automated-Weapon-Detection-System.git
+cd Automated-Weapon-Detection-System
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Open [http://localhost:8501](http://localhost:8501) in your browser and upload an image.
+
+---
+
 ## 🎬 Demo
 
 ### Web Application
@@ -56,7 +69,8 @@ python detect.py --source input/ --output output/
 
 ### Evidence Filtering
 ```bash
-python run_filter.py --classes weapon_gun,weapon_knife --annotate
+# Filter images containing guns or knives (space-separated class names)
+python run_filter.py --classes knife gun --annotate
 ```
 
 ---
@@ -90,6 +104,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> **Note:** `requirements.txt` installs the CPU-only build of PyTorch (~500 MB) instead of the full CUDA build (~2 GB). If you have a NVIDIA GPU, remove the `--index-url` line from `requirements.txt` before installing.
+
 ### Step 4: Run the App
 ```bash
 streamlit run app.py
@@ -113,18 +129,24 @@ python detect.py --source test.jpg
 
 # Detect on a folder of images
 python detect.py --source input/
+
+# Custom confidence threshold and output folder
+python detect.py --source input/ --conf 0.4 --output results/
 ```
 
 ### 📂 Evidence Filtering Pipeline
 ```bash
-# Filter images containing guns only
-python run_filter.py --classes weapon_gun --annotate
+# Filter images containing knives (default)
+python run_filter.py --annotate
 
-# Filter images containing knives only
-python run_filter.py --classes weapon_knife
+# Filter images containing guns
+python run_filter.py --classes gun --annotate
 
-# Filter all weapon types
-python run_filter.py --classes weapon_gun,weapon_knife --annotate
+# Filter all weapon types (space-separated class names)
+python run_filter.py --classes knife gun --annotate
+
+# Custom input/output paths
+python run_filter.py --input crime_photos/ --output evidence/ --classes knife gun --annotate
 ```
 
 **Output generated:**
@@ -233,7 +255,7 @@ Automated-Weapon-Detection-System/
 ## 🔬 Tech Stack
 
 | Tool | Purpose | Version |
-|------|---------|---------|
+|------|---------|---------| 
 | Python | Core language | 3.10+ |
 | YOLOv8 (Ultralytics) | Object detection model | 8.0+ |
 | OpenCV | Image processing & annotation | 4.5+ |
