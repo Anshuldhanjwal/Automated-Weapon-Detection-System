@@ -3,28 +3,33 @@ from PIL import Image, ImageDraw
 import numpy as np
 import io
 
-# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="AWDEFS – Weapon Detection",
     page_icon="🔫",
     layout="wide",
 )
 
-# ── Load model (cached so it only loads once) ─────────────────────────────────
 @st.cache_resource
 def load_model():
     from ultralytics import YOLO
-    return YOLO("yolov8n.pt")   # auto-downloads on first run
+    from huggingface_hub import hf_hub_download
+    model_path = hf_hub_download(
+        repo_id="Subh775/Firearm_Detection_Yolov8n",
+        filename="weights/best.pt"
+    )
+    return YOLO(model_path)
 
-# ── Draw boxes using PIL only (no cv2 needed) ─────────────────────────────────
+@st.cache_resource
+def load_knife_model():
+    from ultralytics import YOLO
+    return YOLO("yolov8n.pt")   # COCO model — used only for knife class
+
 def draw_boxes_pil(image_pil, detections):
     img = image_pil.copy().convert("RGB")
     draw = ImageDraw.Draw(img)
     for det in detections:
         x1, y1, x2, y2 = det["x1"], det["y1"], det["x2"], det["y2"]
-        label = det["label"]
-        conf  = det["confidence"]
-        text  = f"{label}  {conf:.0%}"
+        text = f"{det['label']}  {det['confidence']:.0%}"
         draw.rectangle([x1, y1, x2, y2], outline="#00FF00", width=3)
         text_bbox = draw.textbbox((x1, y1), text)
         draw.rectangle(
@@ -36,22 +41,35 @@ def draw_boxes_pil(image_pil, detections):
                   text, fill="black")
     return img
 
-# ── Run detection ─────────────────────────────────────────────────────────────
 def run_detection(image_pil, conf_threshold=0.35):
-    model = load_model()
     img_np = np.array(image_pil.convert("RGB"))
-    results = model(img_np, conf=conf_threshold, verbose=False)[0]
     detections = []
-    for box in results.boxes:
+
+    # ── Firearm detection (fine-tuned model) ──────────────────────────────────
+    gun_model = load_model()
+    gun_results = gun_model(img_np, conf=conf_threshold, verbose=False)[0]
+    for box in gun_results.boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-        conf   = float(box.conf[0])
-        cls_id = int(box.cls[0])
-        label  = model.names[cls_id]
         detections.append({
-            "label": label,
-            "confidence": round(conf, 3),
+            "label": "Gun",
+            "confidence": round(float(box.conf[0]), 3),
             "x1": x1, "y1": y1, "x2": x2, "y2": y2,
         })
+
+    # ── Knife detection (COCO model, knife class only) ─────────────────────
+    knife_model = load_knife_model()
+    knife_results = knife_model(img_np, conf=conf_threshold, verbose=False)[0]
+    for box in knife_results.boxes:
+        cls_id = int(box.cls[0])
+        label = knife_model.names[cls_id]
+        if label == "knife":
+            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+            detections.append({
+                "label": "Knife",
+                "confidence": round(float(box.conf[0]), 3),
+                "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            })
+
     annotated = draw_boxes_pil(image_pil, detections)
     return annotated, detections
 
@@ -74,7 +92,8 @@ with st.sidebar:
         help="Lower = more detections. Higher = only certain detections.")
     st.markdown("---")
     st.markdown("**About**")
-    st.markdown("Model: YOLOv8-nano (COCO pretrained)")
+    st.markdown("Gun model: YOLOv8n fine-tuned on 7k+ firearm images (89% mAP)")
+    st.markdown("Knife model: YOLOv8n COCO pretrained")
     st.markdown("Built for forensic evidence triage")
     st.markdown("NFSU Delhi — Anshul Dhanjwal")
 
@@ -84,11 +103,10 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    # Validate the uploaded file is a readable image
     try:
         image = Image.open(uploaded_file)
-        image.verify()                  # catch corrupt files early
-        uploaded_file.seek(0)           # reset stream after verify()
+        image.verify()
+        uploaded_file.seek(0)
         image = Image.open(uploaded_file)
     except Exception as e:
         st.error(f"⚠️ Could not read the uploaded image: {e}")
@@ -125,7 +143,7 @@ if uploaded_file is not None:
         st.markdown("**Detection Details:**")
         st.dataframe(detections, use_container_width=True)
     else:
-        st.info("No objects detected. Try lowering the threshold in the sidebar.")
+        st.info("No weapons detected. Try lowering the confidence threshold in the sidebar.")
 
     st.download_button(
         label="⬇️ Download Annotated Image",
@@ -138,7 +156,8 @@ else:
     st.markdown("""
     **How it works:**
     1. Upload any JPG or PNG image
-    2. YOLOv8 scans for weapons and objects
-    3. Bounding boxes and confidence scores appear on the result
-    4. Download the annotated image
+    2. A fine-tuned YOLOv8 model scans for firearms
+    3. A second model scans for knives
+    4. Bounding boxes and confidence scores appear on the result
+    5. Download the annotated image
     """)
